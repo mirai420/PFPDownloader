@@ -8,9 +8,8 @@ using System.Net.WebSockets;
 class Program
 {
     private DiscordSocketClient _client;
-    private const string token = "MTE3NTM5OTE0OTU5NjgzNTg4MA.GyjKdr.A0oTIfbhA4-_oln2wiWwGgHyY1GDBd9jnglPFs";
+    private const string token = "discord_app_token";
     private ConcurrentDictionary<ulong, DateTime> userCommandTimestamps = new ConcurrentDictionary<ulong, DateTime>();
-    private ConcurrentDictionary<ulong, int> adTimeout = new ConcurrentDictionary<ulong, int>();
 
     static void Main(string[] args) => new Program().RunBotAsync().GetAwaiter().GetResult();
 
@@ -83,34 +82,6 @@ class Program
         return false;
     }
 
-    private async Task ShowAd(SocketSlashCommand command)
-    {
-        ulong userId = command.User.Id;
-
-        adTimeout.AddOrUpdate(userId, 1, (key, oldValue) => oldValue + 1);
-
-        if (adTimeout.TryGetValue(userId, out var requests) && requests < 3)
-        {
-            return;
-        }
-
-        var adEmbed = new EmbedBuilder()
-        {
-            Description = "# Check this bot too!\n**Introducing ChatGPT Bot, the most capable Discord AI chatbot! It also can generate high-quality images, music, and more! Invite it now to get a free bonus!**",
-            Color = Color.Green,
-            Url = "https://example.com"
-        }.Build();
-
-        var firstExample = new EmbedBuilder().WithImageUrl("https://media.discordapp.net/attachments/1173584048103366716/1207636851549151272/chrome-capture_5.png?ex=65fc0df6&is=65e998f6&hm=a25c491e3ae2192aab6b2c29222bde6f420e66ae98bd9b2d0ad903019c7bf287").WithUrl("https://example.com").Build();
-        var secondExample = new EmbedBuilder().WithImageUrl("https://media.discordapp.net/attachments/1173584048103366716/1215308186089951282/chrome-capture_12.png?ex=65fc46f2&is=65e9d1f2&hm=0d835d1ff4432e8fa96926e950aec7cf49e3861900a76639db5339f59fe4108d").WithUrl("https://example.com").Build();
-        var embedsList = new List<Embed> { adEmbed, firstExample, secondExample };
-
-        var adBuilder = new ComponentBuilder().WithButton("Receive Bonus", style: ButtonStyle.Link, emote: new Emoji("🎁"), url: "https://discord.com/api/oauth2/authorize?client_id=1142038083236286505&permissions=395137076224&scope=bot+applications.commands").Build();
-
-        await command.FollowupAsync(embeds: embedsList.ToArray(), components: adBuilder, ephemeral: true);
-        adTimeout.TryRemove(userId, out _);
-    }
-
     private async Task ExecuteCommand(SocketSlashCommand slashCommand)
     {
         if (await HandleCommandCooldownAsync(slashCommand))
@@ -148,7 +119,6 @@ class Program
         {
             await command.DeferAsync();
             await command.FollowupAsync(emote.Url);
-            await ShowAd(command);
         }
         else
         {
@@ -173,7 +143,6 @@ class Program
 
             await command.DeferAsync();
             await command.FollowupAsync($"{iconUrl.Replace("jpg", extension)}?size=1024");
-            await ShowAd(command);
         }
         else
         {
@@ -198,7 +167,6 @@ class Program
 
             await command.DeferAsync();
             await command.FollowupAsync($"{bannerUrl.Replace("jpg", extension)}?size=2048");
-            await ShowAd(command);
         }
         else
         {
@@ -221,8 +189,6 @@ class Program
         {
             await command.FollowupAsync(user.GetDefaultAvatarUrl());
         }
-
-        await ShowAd(command);
     }
 
     private async Task GetBanner(SocketSlashCommand command)
@@ -253,7 +219,6 @@ class Program
                     string bannerUrl = $"https://cdn.discordapp.com/banners/{userId}/{bannerHash}.{extension}?size=2048";
 
                     await command.FollowupAsync(bannerUrl);
-                    await ShowAd(command);
                 }
                 else
                 {
